@@ -20,7 +20,8 @@ ranges = [v2.Ranges, -3*pi/4;
         v4.Ranges, 3*pi/4;
         v1.Ranges, pi/4;
         v5.Ranges, 0;
-        v3.Ranges, -pi/4];
+        v3.Ranges, -pi/4;
+        ];
 
 end
 
