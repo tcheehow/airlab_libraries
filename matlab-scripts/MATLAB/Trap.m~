@@ -55,16 +55,25 @@ laser3 = rossubscriber('/teraranger3/laser/scan');
 laser4 = rossubscriber('/teraranger4/laser/scan');
 laser5 = rossubscriber('/teraranger5/laser/scan');
 laser6 = rossubscriber('/teraranger6/laser/scan');
+model_states = rossubscriber('/gazebo/model_states');
 
 %% Loop
 
-ranges = zeros(30, 2);
+sensor_count = 6;
+scan_max = 1;
+ranges = zeros(scan_max*sensor_count, 2);
 scan = 0;
+
 rrate = rosrate(20);
 
 while(true)
     
-    if (scan >= 5) 
+    %% Retrieve Ground Truth
+    
+    xy_0 = receive(model_states);
+    v0 = [xy_0.Pose(3).Position.X, xy_0.Pose(3).Position.Y]
+    
+    if (scan >= scan_max) 
         scan = 0;
     end
     
@@ -82,6 +91,8 @@ while(true)
     scan = scan + 1;
     
     ranges_c = rotate(ranges);
+    
+    
     %ranges_c = fake_coordinates();
     
 %     ranges_h = [v6.Ranges, pi;
@@ -127,7 +138,7 @@ while(true)
 %     grad_dy                 = ranges_c(2,2) - ranges_c(1,2)
 %     grad_dx                 = ranges_c(2,1) - ranges_c(1,1)
 %     yaw_error               = atan(grad_dy / grad_dx)
-%     [acc, thetas, rhos]     = HoughT(ranges_hc,0.01,0.1);
+%     [acc, thetas, rhos]     = HoughT(ranges_c,0.05,1);
 %     out                     = HoughLine(acc, thetas, rhos)
 %     
 %     figure(1)
@@ -175,12 +186,21 @@ while(true)
     
 %     plot(xy_long(:,1),xy_long(:,2),'LineWidth',2,'Color','cyan');
 %     hold off;
+
+    %% Estimating Line Parameters
+    
+%     [alpha, rho] = line_estimator(ranges_c(4:6,:)); % for Method 2
+	[alpha, rhoL, rhoR] = line_estimator(ranges_c);
+    line_x = [-5:0.1:5];
     
     %% Plot Output
     
     figure(3)
-    plot([ranges_c(:,1);ranges_c(1,1)], [ranges_c(:,2); ranges_c(1,2)], '--b');
+    plot([ranges_c(:,1);ranges_c(1,1)], [ranges_c(:,2); ranges_c(1,2)], '*-b');
     hold on
+    plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
+    plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
+    plot(v0, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
 %     plot(centre(1), centre(2), 'ro', polygonCentre(1), polygonCentre(2), 'bo', 0, 0, 'xk');
 %     legend('Boundary','COM(Discrete)', 'COM(Continuous)', 'UAV');
     

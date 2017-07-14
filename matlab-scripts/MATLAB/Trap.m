@@ -55,6 +55,7 @@ laser3 = rossubscriber('/teraranger3/laser/scan');
 laser4 = rossubscriber('/teraranger4/laser/scan');
 laser5 = rossubscriber('/teraranger5/laser/scan');
 laser6 = rossubscriber('/teraranger6/laser/scan');
+model_states = rossubscriber('/gazebo/model_states');
 
 %% Loop
 
@@ -66,6 +67,11 @@ scan = 0;
 rrate = rosrate(20);
 
 while(true)
+    
+    %% Retrieve Ground Truth
+    
+    xy_0 = receive(model_states);
+    v0 = [xy_0.Pose(3).Position.Y, xy_0.Pose(3).Position.X];
     
     if (scan >= scan_max) 
         scan = 0;
@@ -184,7 +190,8 @@ while(true)
     %% Estimating Line Parameters
     
 %     [alpha, rho] = line_estimator(ranges_c(4:6,:)); % for Method 2
-	[alpha, rhoL, rhoR] = line_estimator(ranges_c);
+	[alpha, rhoL, rhoR] = line_estimator(ranges_c)
+    width = abs(rhoL) + abs(rhoR);
     line_x = [-5:0.1:5];
     
     %% Plot Output
@@ -194,6 +201,8 @@ while(true)
     hold on
     plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
     plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
+    plot(v0(1), v0(2), 'ok');
+    plot((width/2)+rhoL, 0, 'xk');
 %     plot(centre(1), centre(2), 'ro', polygonCentre(1), polygonCentre(2), 'bo', 0, 0, 'xk');
 %     legend('Boundary','COM(Discrete)', 'COM(Continuous)', 'UAV');
     

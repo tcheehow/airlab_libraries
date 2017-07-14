@@ -53,8 +53,8 @@ function [alpha, rL, rR] = line_estimator(points)
     end
     
     x = (A'*A)\(A'*B);
-    alpha = atan(x(1))
-    rL = x(2) * cos(alpha)
-    rR = x(3) * cos(alpha)
+    alpha = atan(x(1));
+    rL = x(2) * cos(alpha);
+    rR = x(3) * cos(alpha);
     
 end
