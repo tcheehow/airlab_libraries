@@ -13,7 +13,16 @@ function out = PlaneLineIntersect(P0, P1, V0, n)
     u   = P1 - P0;
     w   = V0 - P0;
     
-    si  = dot(n,w) / dot(n,u);
+    % check for line // to plane
+    ret = dot(u, n);
+    tol = 10e-13;
+    
+    if (abs(ret) <= tol) %when line is // to plane
+        si = 0;
+    else  
+        si  = dot(n,w) / dot(n,u);
+    end
+    
     out = P0 + si * u;
     
 end

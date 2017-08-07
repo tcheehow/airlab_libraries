@@ -1,6 +1,6 @@
-function out = rpy(r,yaw,pitch,roll)
+function out = rpy(yaw,pitch,roll)
 
-    if (nargin < 4)
+    if (nargin < 3)
     % cartesian input from the polar tof readings
     r       = [1 0 0]';
     
@@ -13,6 +13,6 @@ function out = rpy(r,yaw,pitch,roll)
     % default is 'zyx' => yaw, pitch, roll
     rotm    = eul2rotm(eul);
     
-    
-    out     = rotm * r;
+    out     = rotm;
+%     out     = rotm * r;
 end

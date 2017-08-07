@@ -1,7 +1,7 @@
 function out = Simulator(  )
 
     close all;
-    clear all;
+    clear;
 %SIMULATOR Summary of this function goes here
 %   Detailed explanation goes here
     
@@ -22,7 +22,25 @@ function out = Simulator(  )
      
     sensor_cart = rotate(sensor);
     
-    %rotate from body frame 
+    %rotate from body frame to world frame
+    
+    yaw     = 0;
+    pitch   = -pi/4;
+    roll    = -pi/4;
+    
+    rotm    = rpy(yaw, pitch, roll);
+    for i=1:length(sensor_cart)
+        v = sensor_cart(i,:)';
+        v = rotm * v;
+        sensor_cart(i,:) = v'
+    end
+    
+    rotm    = rotm';
+    for i=1:length(sensor_cart)
+        v = sensor_cart(i,:)';
+        v = rotm * v;
+        sensor_cart(i,:) = v'
+    end
     
     intersects = [];
     
@@ -49,6 +67,9 @@ function out = Simulator(  )
     plot3([0 out(1,i)], [0 out(2,i)], [0, out(3,i)], '*-b');
     end
     hold off;
+    xlim([0 3])
+    ylim([-3 3])
+    zlim([-3 3])
     
     function cart = rotate(polar)
         d = length(polar);
