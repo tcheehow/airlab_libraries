@@ -2,8 +2,16 @@ function out = Trap()
 close
 clear all
 
+edison = false;
+
 rosshutdown;
-rosinit;
+
+if (edison)
+     rosinit('http://192.168.0.106:11311');
+%     rosinit;
+else
+    rosinit;
+end
 
 ranges = []; %list of polar coordinates (r, theta)
 ranges = [ranges; rand, pi/4];
@@ -48,14 +56,22 @@ r2 = [1,2];
 
 %% ROS Subscriber
 
-
-laser1 = rossubscriber('/teraranger1/laser/scan');
-laser2 = rossubscriber('/teraranger2/laser/scan');
-laser3 = rossubscriber('/teraranger3/laser/scan');
-laser4 = rossubscriber('/teraranger4/laser/scan');
-laser5 = rossubscriber('/teraranger5/laser/scan');
-laser6 = rossubscriber('/teraranger6/laser/scan');
-model_states = rossubscriber('/gazebo/model_states');
+if (edison)
+    laser1 = rossubscriber('/teraranger0');
+    laser2 = rossubscriber('/teraranger1');
+    laser3 = rossubscriber('/teraranger2');
+    laser4 = rossubscriber('/teraranger3');
+    laser5 = rossubscriber('/teraranger4');
+    laser6 = rossubscriber('/teraranger5'); 
+else
+    laser1 = rossubscriber('/teraranger1/laser/scan');
+    laser2 = rossubscriber('/teraranger2/laser/scan');
+    laser3 = rossubscriber('/teraranger3/laser/scan');
+    laser4 = rossubscriber('/teraranger4/laser/scan');
+    laser5 = rossubscriber('/teraranger5/laser/scan');
+    laser6 = rossubscriber('/teraranger6/laser/scan');
+    model_states = rossubscriber('/gazebo/model_states');  
+end
 
 %% Loop
 
@@ -64,30 +80,32 @@ scan_max = 1;
 ranges = zeros(scan_max*sensor_count, 2);
 scan = 0;
 
-rrate = rosrate(20);
+rrate = rosrate(100);
 
 while(true)
     
     %% Retrieve Ground Truth
     
-    xy_0 = receive(model_states);
-    v0 = [xy_0.Pose(3).Position.Y, xy_0.Pose(3).Position.X];
+    if(edison == false)
+        xy_0 = receive(model_states);
+        v0 = [xy_0.Pose(3).Position.Y, xy_0.Pose(3).Position.X];
+    end
     
     if (scan >= scan_max) 
         scan = 0;
     end
     
-    v1 = receive(laser1, 0.1);
-    v2 = receive(laser2, 0.1);
-    v3 = receive(laser3, 0.1);
-    v4 = receive(laser4, 0.1);
-    v5 = receive(laser5, 0.1);
-    v6 = receive(laser6, 0.1);
+    v1 = receive(laser1);
+    v2 = receive(laser2);
+    v3 = receive(laser3);
+    v4 = receive(laser4);
+    v5 = receive(laser5);
+    v6 = receive(laser6);
     
     j = (scan*6)+1;
     
 %     ranges = ros_input(v1, v2, v3, v4);
-    ranges(j:j+5, :) = ros_input(v1, v2, v3, v4, v5, v6); 
+    ranges(j:j+5, :) = ros_input(v1, v2, v3, v4, v5, v6, edison); 
     scan = scan + 1;
     
     ranges_c = rotate(ranges);
@@ -190,19 +208,38 @@ while(true)
     %% Estimating Line Parameters
     
 %     [alpha, rho] = line_estimator(ranges_c(4:6,:)); % for Method 2
+
+
 	[alpha, rhoL, rhoR] = line_estimator(ranges_c)
-    width = abs(rhoL) + abs(rhoR);
+    width = abs(rhoL) + abs(rhoR)
     line_x = [-5:0.1:5];
     
     %% Plot Output
-    
+    if (edison)
+        offset = [0, 0;
+            0, 0;
+            0, -400;
+            0, -400;
+            0, 0;
+            0, 0];        
+        ranges_c = ranges + offset;
+        ranges_c = ranges_c / 1000;
+    end
     figure(3)
     plot([ranges_c(:,1);ranges_c(1,1)], [ranges_c(:,2); ranges_c(1,2)], '*-b');
     hold on
-    plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
-    plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
-    plot(v0(1), v0(2), 'ok');
-    plot((width/2)+rhoL, 0, 'xk');
+    
+    if(edison == false)
+        plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
+        plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
+%     plot(v0(1), v0(2), 'ok');
+        plot(-(width/2)-rhoR, 0, 'xk');
+    end
+
+
+
+
+
 %     plot(centre(1), centre(2), 'ro', polygonCentre(1), polygonCentre(2), 'bo', 0, 0, 'xk');
 %     legend('Boundary','COM(Discrete)', 'COM(Continuous)', 'UAV');
     
@@ -244,8 +281,6 @@ end
         centrey = centrey/(kyi);
         out = [centrex, centrey];
     end
-
-    rosshutdown;
 
 end
 
