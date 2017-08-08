@@ -11,7 +11,7 @@ function out = rpy(yaw,pitch,roll)
 
     eul     = [yaw, pitch, roll];
     % default is 'zyx' => yaw, pitch, roll
-    rotm    = eul2rotm(eul);
+    rotm    = eul2rotm(eul, 'zyx');
     
     out     = rotm;
 %     out     = rotm * r;

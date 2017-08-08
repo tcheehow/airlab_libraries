@@ -14,13 +14,9 @@ else
 end
 
 ranges = []; %list of polar coordinates (r, theta)
-ranges = [ranges; rand, pi/4];
-ranges = [ranges; rand, 3*pi/4];
-ranges = [ranges; rand, -3*pi/4];
-ranges = [ranges; rand, -pi/4];
 
 %(2) (1)
-%(3) (4)
+%(3) (2)
 
 %% Rotation Matrix to Cartesian
 
@@ -210,9 +206,9 @@ while(true)
 %     [alpha, rho] = line_estimator(ranges_c(4:6,:)); % for Method 2
 
 
-% 	[alpha, rhoL, rhoR] = line_estimator(ranges_c)
-%     width = abs(rhoL) + abs(rhoR);
-%     line_x = [-5:0.1:5];
+	[alpha, rhoL, rhoR] = line_estimator(ranges_c)
+    width = abs(rhoL) + abs(rhoR)
+    line_x = [-5:0.1:5];
     
     %% Plot Output
     if (edison)
@@ -230,10 +226,11 @@ while(true)
     hold on
     
     if(edison == false)
-%     plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
-%     plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
+        plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
+        plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
 %     plot(v0(1), v0(2), 'ok');
-%     plot((width/2)+rhoL, 0, 'xk');
+        plot(-(width/2)-rhoR, 0, 'xk');
+    end
 
 
 

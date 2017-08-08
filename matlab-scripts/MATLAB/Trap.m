@@ -14,13 +14,10 @@ else
 end
 
 ranges = []; %list of polar coordinates (r, theta)
-ranges = [ranges; rand, pi/4];
-ranges = [ranges; rand, 3*pi/4];
-ranges = [ranges; rand, -3*pi/4];
-ranges = [ranges; rand, -pi/4];
 
-%(2) (1)
-%(3) (4)
+%(6) (1)
+%(5) (2)
+%(4) (3)
 
 %% Rotation Matrix to Cartesian
 
