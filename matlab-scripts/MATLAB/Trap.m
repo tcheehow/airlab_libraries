@@ -26,7 +26,8 @@ ranges = []; %list of polar coordinates (r, theta)
         th = polar(:,2);
         x = r.*cos(th);
         y = r.*sin(th);
-        cart = [x, y];
+%         cart = [x, y];
+        cart = [y, x];
     end
 
 %% Distance

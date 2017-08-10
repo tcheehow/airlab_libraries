@@ -44,15 +44,19 @@ function [alpha, rL, rR] = line_estimator(points)
     for i=1:length(points)
         x = points(i,1);
         y = points(i,2);
+%         y = points(i,1);
+%         x = points(i,2);
         if (i<=3)
-            A = [A; y, -1, 0];
+            A = [A; x, -1, 0];
         else
-            A = [A; y, 0, -1];
+            A = [A; x, 0, -1];
         end
-        B = [B; -x];
+        B = [B; -y];
     end
     
-    x = (A'*A)\(A'*B);
+%     x = pinv(A'*A)*(A'*B);
+%     x = (A'*A)\(A'*B);
+    x = lsqr(A,B);
     alpha = atan(x(1));
     rL = x(2) * cos(alpha);
     rR = x(3) * cos(alpha);

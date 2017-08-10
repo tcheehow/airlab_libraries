@@ -4,29 +4,33 @@ close all;
 clear;
 
 % uav body angles w.r.t world frame
-yaw     = 0;
-pitch   = -pi/4;
-roll    = -pi/4;
+yaw     = pi/8;
+pitch   = pi/4;
+roll    = 0;
 
 
 %% sensor ray vectors definition in polar coordinates. sensor = [mag, direction]
 
 sensor  = ...
-    [1, pi/4;
-    1, 0;
-    1, -pi/4;
+    [1, -pi/4;
+    1, -pi/2;
     1, -3*pi/4;
-    1, pi;
-    1, 3*pi/4];
+    1, 3*pi/4;
+    1, pi/2;
+    1, pi/4];
 
 %% rotation of sensor vectors to cartesian
 
 sensor_cart = rotate(sensor);
+% figure()
+% sensor_cart
+% plot(-sensor_cart(:,2), sensor_cart(:,1));
+axis equal
 
 %% rotate from body frame to world frame
 
 % rotation matrix
-rotm    = rpy(yaw, roll, pitch);
+rotm    = rpy(yaw, pitch, roll);
 
 % rotate all sensor ray to world frame
 for i=1:length(sensor_cart)
@@ -48,9 +52,9 @@ end
 intersects = [];
 
 % point on the plane
-V0  = [2.5; 0; 0];
+V0  = [0; 2.5; 0];
 % normal vector to the plane
-n   = [-2.5; 0; 0];
+n   = [0; 2.5; 0];
 
 % right tunnel wall intersect
 for i=1:3
@@ -70,8 +74,7 @@ for i=4:6
     intersects  = [intersects, tmp];
 end
 
-out = intersects;
-
+out = intersects
 
 %% visualisation of matlab simulator
 
@@ -88,11 +91,14 @@ for i=1:length(sensor_cart)
     plot3([0 out(1,i)], [0 out(2,i)], [0, out(3,i)], '*--b');
 end
 
-rotm_   = rpy(yaw, roll, pitch);
-heading = rotm_ * [0 1 0]';
+% rotm_   = rpy(yaw, pitch, roll);
+heading = rotm * [1 0 0]'
 % uav heading
 %     heading = rotate([3, yaw+pi/2]);
 plot3([0 heading(1)], [0 heading(2)], [0, heading(3)], '+-g');
+
+% check the UAV heading
+uav_heading = atand(heading(2)/heading(1))
 
 limit = 1.2*max(max(abs(intersects)));
 
@@ -101,13 +107,13 @@ ylim([-limit limit])
 zlim([-limit limit])
 
 % plot tunnel surface
-[Y, Z]  = meshgrid(-limit:1:limit, -limit:1:limit);
-X       = 2.5 * ones(size(Y));
+[X, Z]  = meshgrid(-limit:1:limit, -limit:1:limit);
+Y       = 2.5 * ones(size(X));
 CO(:,:,1) = zeros(size(Z));
 CO(:,:,2) = zeros(size(Z));
 CO(:,:,3) = zeros(size(Z));
 surf(X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
-surf(-X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
+surf(X,-Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
 yaw     = rad2deg(yaw)
 xlabel({['yaw error: ' num2str(yaw)]});
 hold off;
@@ -117,27 +123,39 @@ hold off;
 
 %     [alpha, rho] = line_estimator(ranges_c(4:6,:)); % for Method 2
 
-rotm    = rotm';
-ranges_c = intersects';
+% rotm    = rotm';
+ranges_c = intersects'; % teraranger readings as seen from the uav body frame
 
 % rotate all sensor ray to world frame
 for i=1:length(ranges_c)
     v = ranges_c(i,:);
-    v = rotm * v';
+    v = rotm' * v';
     ranges_c(i,:) = v';
 end
 
+% project it as if it is on the horizontal plane
+[theta, rho] = cart2pol(ranges_c(:,1), ranges_c(:,2));
+figure()
+polarplot(theta, rho);
 
-[alpha, rhoL, rhoR] = line_estimator(ranges_c);
+
+
+[alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2))
 width = abs(rhoL) + abs(rhoR);
 line_x = [-5:0.1:5];
 
 figure()
-plot([ranges_c(:,1);ranges_c(1,1)], [ranges_c(:,2); ranges_c(1,2)], '*-b');
+plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*-b');
 hold on
 
-plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
-plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
+plot(-(rhoL-line_x*sin(alpha)) / cos (alpha), line_x, '--g');
+plot(-(rhoR-line_x*sin(alpha)) / cos (alpha), line_x, '--g');
+
+% plot(-(rhoL-line_x*sin(alpha)) / cos (alpha), line_x, '--g');
+% plot(-(rhoR-line_x*sin(alpha)) / cos (alpha), line_x, '--g');
+
+% plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
+% plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
 %     plot(v0(1), v0(2), 'ok');
 centre = -(width/2)-rhoR;
 plot(centre, 0, 'xk');
@@ -155,4 +173,5 @@ th = polar(:,2);
 x = r.*cos(th);
 y = r.*sin(th);
 cart = [x, y, zeros(d(1),1)];
+% cart = [-y, x, zeros(d(1),1)];
 end
