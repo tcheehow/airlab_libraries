@@ -3,10 +3,15 @@ function out = Simulator(  )
 close all;
 clear;
 
-% uav body angles w.r.t world frame
-yaw     = pi/8;
-pitch   = pi/4;
-roll    = pi/4;
+%% uav body angles w.r.t world frame
+
+yaw     = 0;
+pitch   = 0;
+roll    = 0;
+
+%% offset of the UAV = [mag, direction]
+
+uav_pos = [0,0];
 
 
 %% sensor ray vectors definition in polar coordinates. sensor = [mag, direction]
@@ -49,27 +54,27 @@ end
 
 %% ray tracing for finding intersections
 
-intersects = [];
+intersects  = [];
+
+% UAV position
+P0          = [1;0;0];
 
 % point on the plane
-V0  = [0; 2.5; 0];
+V0          = [0; 2.5; 0];
 % normal vector to the plane
-n   = [0; 2.5; 0];
+n           = [0; 2.5; 0];
+% n   = V0 - P0;
 
 % right tunnel wall intersect
 for i=1:3
-    P0          = [0;0;0];
-    P1          = sensor_cart(i,:)';
-    
+    P1          = sensor_cart(i,:)';    
     tmp         = PlaneLineIntersect(P0,P1,V0,n);
     intersects  = [intersects, tmp];
 end
 
 % left tunnel wall intersect
 for i=4:6
-    P0          = [0;0;0];
-    P1          = sensor_cart(i,:)';
-    
+    P1          = sensor_cart(i,:)';    
     tmp         = PlaneLineIntersect(P0,P1,-V0,n);
     intersects  = [intersects, tmp];
 end
@@ -157,26 +162,26 @@ plot3(out(1,4:6), out(2,4:6), out(3,4:6), '*-k');
 
 % ray
 for i=1:length(sensor_cart)
-    plot3([0 out(1,i)], [0 out(2,i)], [0, out(3,i)], '*--b');
+    plot3([P0(1) out(1,i)], [P0(2) out(2,i)], [P0(3), out(3,i)], '*--b');
 end
 
-% right line (projected)
-plot3(out_xy(1,1:3), out_xy(2,1:3), out_xy(3,1:3), '*-r');
-hold on;
-
-% left line (projected)
-plot3(out_xy(1,4:6), out_xy(2,4:6), out_xy(3,4:6), '*-r');
-
-% ray (projected)
-for i=1:length(sensor_cart)
-    plot3([0 out_xy(1,i)], [0 out_xy(2,i)], [0, out_xy(3,i)], '*--r');
-end
+% % right line (projected)
+% plot3(out_xy(1,1:3), out_xy(2,1:3), out_xy(3,1:3), '*-r');
+% 
+% 
+% % left line (projected)
+% plot3(out_xy(1,4:6), out_xy(2,4:6), out_xy(3,4:6), '*-r');
+% 
+% % ray (projected)
+% for i=1:length(sensor_cart)
+%     plot3([P0(1) out_xy(1,i)], [P0(2) out_xy(2,i)], [P0(3), out_xy(3,i)], '*--r');
+% end
 
 % rotm_   = rpy(yaw, pitch, roll);
 heading = rotm * [1 0 0]'
 % uav heading
 %     heading = rotate([3, yaw+pi/2]);
-plot3([0, heading(1)], [0 heading(2)], [0, heading(3)], '+-g');
+plot3([P0(2), heading(1)], [P0(1) heading(2)], [P0(3), heading(3)], '+-g');
 
 % check the UAV heading
 uav_heading = atand(heading(2)/heading(1))
