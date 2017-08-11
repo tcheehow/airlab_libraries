@@ -6,7 +6,7 @@ clear;
 % uav body angles w.r.t world frame
 yaw     = pi/8;
 pitch   = pi/4;
-roll    = 0;
+roll    = pi/4;
 
 
 %% sensor ray vectors definition in polar coordinates. sensor = [mag, direction]
