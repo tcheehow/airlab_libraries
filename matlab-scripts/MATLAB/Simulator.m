@@ -25,7 +25,7 @@ sensor_cart = rotate(sensor);
 % figure()
 % sensor_cart
 % plot(-sensor_cart(:,2), sensor_cart(:,1));
-axis equal
+% axis equal
 
 %% rotate from body frame to world frame
 
@@ -76,69 +76,46 @@ end
 
 out = intersects
 
-%% visualisation of matlab simulator
+%%  Project the Vectors to Horizontal Plane
 
-% right line
-figure();
-plot3(out(1,1:3), out(2,1:3), out(3,1:3), '*-k');
-hold on;
+out_xy = out;
+out_xy(end, :) = 0;
 
-% left line
-plot3(out(1,4:6), out(2,4:6), out(3,4:6), '*-k');
-
-% ray
-for i=1:length(sensor_cart)
-    plot3([0 out(1,i)], [0 out(2,i)], [0, out(3,i)], '*--b');
-end
-
-% rotm_   = rpy(yaw, pitch, roll);
-heading = rotm * [1 0 0]'
-% uav heading
-%     heading = rotate([3, yaw+pi/2]);
-plot3([0 heading(1)], [0 heading(2)], [0, heading(3)], '+-g');
-
-% check the UAV heading
-uav_heading = atand(heading(2)/heading(1))
-
-limit = 1.2*max(max(abs(intersects)));
-
-xlim([-limit limit])
-ylim([-limit limit])
-zlim([-limit limit])
-
-% plot tunnel surface
-[X, Z]  = meshgrid(-limit:1:limit, -limit:1:limit);
-Y       = 2.5 * ones(size(X));
-CO(:,:,1) = zeros(size(Z));
-CO(:,:,2) = zeros(size(Z));
-CO(:,:,3) = zeros(size(Z));
-surf(X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
-surf(X,-Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
-yaw     = rad2deg(yaw)
-xlabel({['yaw error: ' num2str(yaw)]});
-hold off;
-
-
-%% Estimating Line Parameters
+%%  Estimating Line Parameters
+%   Using simulated terarangers reading
 
 %     [alpha, rho] = line_estimator(ranges_c(4:6,:)); % for Method 2
 
 % rotm    = rotm';
-ranges_c = intersects'; % teraranger readings as seen from the uav body frame
 
+
+% % using world frame data
+% ranges_c = out';
+
+% rotate all sensor ray to world frame
+% for i=1:length(ranges_c)
+%     v = ranges_c(i,:);
+%     v = rotm' * v';
+%     ranges_c(i,:) = v';
+% end
+
+
+% using body frame data
+ranges_c = out_xy';
+
+rotm_yaw   = rpy(yaw, 0, 0);
 % rotate all sensor ray to world frame
 for i=1:length(ranges_c)
     v = ranges_c(i,:);
-    v = rotm' * v';
+    v = rotm_yaw * v';
     ranges_c(i,:) = v';
 end
 
+
 % project it as if it is on the horizontal plane
-[theta, rho] = cart2pol(ranges_c(:,1), ranges_c(:,2));
-figure()
-polarplot(theta, rho);
-
-
+% [theta, rho] = cart2pol(ranges_c(:,1), ranges_c(:,2));
+% figure()
+% polarplot(theta, rho);
 
 [alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2))
 width = abs(rhoL) + abs(rhoR);
@@ -157,12 +134,69 @@ plot(-(rhoR-line_x*sin(alpha)) / cos (alpha), line_x, '--g');
 % plot(line_x, (rhoL-line_x*cos(alpha)) / sin (alpha), '--g');
 % plot(line_x, (rhoR-line_x*cos(alpha)) / sin (alpha), '--g');
 %     plot(v0(1), v0(2), 'ok');
+
+limit = 1.2*max(max(abs(intersects)));
+
 centre = -(width/2)-rhoR;
 plot(centre, 0, 'xk');
 axis([-limit limit -limit limit])
 alpha     = rad2deg(alpha)
 xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha)]});
+title('Simulated TeraRangers Reading on Body Frame');
+hold off
 
+%% visualisation of matlab simulator
+
+% right line
+figure();
+plot3(out(1,1:3), out(2,1:3), out(3,1:3), '*-k');
+hold on;
+
+% left line
+plot3(out(1,4:6), out(2,4:6), out(3,4:6), '*-k');
+
+% ray
+for i=1:length(sensor_cart)
+    plot3([0 out(1,i)], [0 out(2,i)], [0, out(3,i)], '*--b');
+end
+
+% right line (projected)
+plot3(out_xy(1,1:3), out_xy(2,1:3), out_xy(3,1:3), '*-r');
+hold on;
+
+% left line (projected)
+plot3(out_xy(1,4:6), out_xy(2,4:6), out_xy(3,4:6), '*-r');
+
+% ray (projected)
+for i=1:length(sensor_cart)
+    plot3([0 out_xy(1,i)], [0 out_xy(2,i)], [0, out_xy(3,i)], '*--r');
+end
+
+% rotm_   = rpy(yaw, pitch, roll);
+heading = rotm * [1 0 0]'
+% uav heading
+%     heading = rotate([3, yaw+pi/2]);
+plot3([0, heading(1)], [0 heading(2)], [0, heading(3)], '+-g');
+
+% check the UAV heading
+uav_heading = atand(heading(2)/heading(1))
+
+xlim([-limit limit])
+ylim([-limit limit])
+zlim([-limit limit])
+
+% plot tunnel surface
+[X, Z]  = meshgrid(-limit:1:limit, -limit:1:limit);
+Y       = 2.5 * ones(size(X));
+CO(:,:,1) = zeros(size(Z));
+CO(:,:,2) = zeros(size(Z));
+CO(:,:,3) = zeros(size(Z));
+surf(X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
+surf(X,-Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
+yaw     = rad2deg(yaw)
+title('Simulated TeraRangers Reading on World Frame');
+xlabel({['yaw error: ' num2str(yaw)]});
+hold off;
 
 end
 
