@@ -1,4 +1,4 @@
-function out = rpy(yaw,pitch,roll)
+function out = rpy(yaw,pitch,roll,xyzs)
 
     if (nargin < 3)
     % cartesian input from the polar tof readings
@@ -16,7 +16,12 @@ function out = rpy(yaw,pitch,roll)
 %     r2              = rot_pitch * r1;
 %     rotm            = rot_pitch * rot_roll
     
-    rotm            = eul2rotm([yaw, pitch, roll], 'zyx');
+%     rotm            = eul2rotm([yaw, pitch, roll], 'zyx');
+    
+    % use homogenenous transformation instead
+    rotm            = eul2tform([yaw, pitch, roll], 'zyx');
+    rotm(:,end)     = xyzs;
+    
     out             = rotm;
 %     out             = rotm * r;
 end
