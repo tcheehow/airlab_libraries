@@ -49,10 +49,6 @@ classdef FakeUAV
             % cart = [-y, x, zeros(d(1),1)];
         end
         
-        function out = getTROneReadings(obj)
-            out     = 0;
-        end
-        
         function rotm = getRotMatrix(obj)
             rotm    = rpy(obj.uavOrientation, obj.uavPos);
         end

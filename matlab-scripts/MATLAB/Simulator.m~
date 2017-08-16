@@ -65,7 +65,7 @@ for i=4:6
     intersects  = [intersects, tmp];
 end
 
-out = intersects
+out = intersects;
 dis = [];
 
 %% convert to what to the terarangers see
@@ -115,8 +115,6 @@ else
 end
 
 %% visualisation of matlab simulator
-
-if (ground_truth == false)
 
 limit = 1.2*max(max(abs(intersects)));
 dis_c = dis_c';
@@ -171,8 +169,6 @@ zlim([-limit limit])
 % title('Simulated TeraRangers Reading on World Frame');
 % xlabel({['yaw error: ' num2str(yaw)]});
 hold off;
-
-end
 
 
 %% Convert of TROne Frame of Reference
@@ -299,7 +295,5 @@ yaw     = rad2deg(yaw)
 title('Simulated TeraRangers Reading on World Frame');
 xlabel({['yaw error: ' num2str(yaw)]});
 hold off;
-
-rotm
 
 end

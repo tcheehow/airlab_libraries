@@ -2,11 +2,11 @@ function out = rpy(orient,xyzs)
 
 if (nargin < 2)
     % cartesian input from the polar tof readings
-    xyzs       = [1 0 0 1]';
+    xyzs       = [0 0 0 1]';
     
-    yaw     = pi/4;
-    pitch   = pi/4;
-    roll    = pi/4;
+    yaw     = 0;
+    pitch   = 0;
+    roll    = 0;
 else
     yaw     = orient(1);
     pitch   = orient(2);

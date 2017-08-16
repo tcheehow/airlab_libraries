@@ -7,7 +7,7 @@ clear;
 
 yaw     = pi/6;    pitch   = -pi/4;    roll    = -pi/4;
 
-uav_pos = [0;0;0;1]; % offset of the UAV = [x, y, z, s]  homogeneous coordinate
+uav_pos = [0.;0;0;1]; % offset of the UAV = [x, y, z, s]  homogeneous coordinate
 
 uav     = FakeUAV([yaw,pitch,roll], uav_pos);
 
