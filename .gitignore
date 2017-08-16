@@ -1,0 +1,3 @@
+# exclude all matlab temp files that ends with ~
+
+*~
