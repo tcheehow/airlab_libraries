@@ -22,12 +22,12 @@ if (edison)
         v5.Range_, pi;
         v6.Range_, 3*pi/4];
 else
-    ranges = [v1.Ranges, pi/4;
-        v2.Ranges, 0;
-        v3.Ranges, -pi/4;
-        v4.Ranges, -3*pi/4;
-        v5.Ranges, pi;
-        v6.Ranges, 3*pi/4];
+    ranges = [v1.Ranges, -pi/4;
+        v2.Ranges, -pi/2;
+        v3.Ranges, -3*pi/4;
+        v4.Ranges, 3*pi/4;
+        v5.Ranges, pi/2;
+        v6.Ranges, pi/4];
 end
 
 end
