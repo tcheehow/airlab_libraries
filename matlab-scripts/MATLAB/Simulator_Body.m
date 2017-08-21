@@ -3,12 +3,21 @@ function Simulator_Body()
 close all;
 clear;
 
-gazebo = true;
-niceplots = false;
+gazebo = false;
+niceplots = true;
 
 if (gazebo)
     rosshutdown;
     rosinit;
+    
+    sensorOffset = ...
+        [0.2256, -0.1741 0;
+        0.1739 -0.1915 0;
+        -0.1739 -0.1915 0;
+        -0.1739 0.1915 0;
+        0.1739 0.1915 0;
+        0.2256 0.1741 0];
+    
     laser1 = rossubscriber('/teraranger1/laser/scan');
     laser2 = rossubscriber('/teraranger2/laser/scan');
     laser3 = rossubscriber('/teraranger3/laser/scan');
@@ -27,9 +36,9 @@ else
     
     %% initialize uav instance with body frame angles and offset
     
-    yaw     = pi/6;    pitch   = pi/4;    roll    = pi/4;
+    yaw     = 0;    pitch   = pi/4;    roll    = pi/4;
     
-    uav_pos = [0;1;0;1]; % offset of the UAV = [x, y, z, s]  homogeneous coordinate
+    uav_pos = [0;0;0;1]; % offset of the UAV = [x, y, z, s]  homogeneous coordinate
     
     uav     = FakeUAV([yaw,pitch,roll], uav_pos);
     
@@ -87,8 +96,10 @@ while (true)
         
         %% Project the Vectors to Horizontal Plane (Body-Fixed Rotation) - Body Frame
         
-        [dis_x, dis_y]  = pol2cart(dis(:,2), dis(:,1)); %convert to cartersian
+        [dis_x, dis_y]  = pol2cart(dis(:,2), dis(:,1)); %convert to cartersian        
         dis_c           = [dis_x, dis_y, zeros(size(dis_x))];
+        dis_c           = dis_c + sensorOffset;
+        
         dis_c           = cart2hom(dis_c); %convert to homogeneous coordinate
         
         bodyXYZ     = [[1;0;0], [0;1;0], [0;0;1]];
@@ -98,7 +109,7 @@ while (true)
         bodyX2Y2Z2  = rotmY * bodyX1Y1Z1;
         rotmX       = eul2rotm([0,0,-roll], 'ZYX');
         bodyX3Y3Z3  = rotmX * bodyX2Y2Z2;
-        x3y3z3      = [];
+        x3y3z3      = [];      
         
         % project all the body frame sensors to the horizontal plane
         for i = 1:length(dis_c)
@@ -106,6 +117,16 @@ while (true)
             p       = bodyX3Y3Z3(:,1:2) * x_cap;
             x3y3z3  = [x3y3z3, p];
         end
+        
+        sensorOffset_Projected	= [];
+        sensorOffset_h            = cart2hom(sensorOffset); 
+        
+        for i = 1:length(sensorOffset_h)
+            [x_cap, flag, relres, iter]   = lsqr(bodyX3Y3Z3(:,1:2), sensorOffset_h(i,1:3)', 1e-10);
+            p       = bodyX3Y3Z3(:,1:2) * x_cap;
+            sensorOffset_Projected  = [sensorOffset_Projected, p];
+        end        
+        
         
         %% Project the Vectors to Horizontal Plane (Body-Fixed Rotation) - Body Frame
         
@@ -138,11 +159,11 @@ while (true)
             limit1 = max(max(abs(dis_c)));
             limit2 = max(max(abs(x3y3z3)));
             limit = 1.2*max([limit1, limit2]);
-            h1 = visualise(dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on Body Frame');
+            h1 = visualise(sensorOffset, sensorOffset_Projected, dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on Body Frame');
             
             %% visualisation of matlab simulator (in world frame)
             
-            h2 = visualise(dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on World Frame');
+            % h2 = visualise(dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on World Frame');
         end
 
 
@@ -168,7 +189,7 @@ while (true)
         
         % ray
         for i=1:length(ranges_c)
-            plot([0 ranges_c(i,1)], [0 ranges_c(i,2)], '*--b');
+            plot([sensorOffset(i,1) ranges_c(i,1)], [sensorOffset(i,2) ranges_c(i,2)], '*--b');
         end
         
         centre = (width/2)-rhoR;
@@ -243,6 +264,7 @@ while (true)
         
         [dis_x, dis_y]  = pol2cart(dis(:,2), dis(:,1)); %convert to cartersian
         dis_c           = [dis_x, dis_y, zeros(size(dis_x))];
+        dis_c           = dis_c + uav.sensorOffset;
         dis_c           = cart2hom(dis_c); %convert to homogeneous coordinate
         
         bodyXYZ     = [[1;0;0], [0;1;0], [0;0;1]];
@@ -261,9 +283,22 @@ while (true)
             x3y3z3  = [x3y3z3, p];
         end
         
+        sensorOffset = uav.sensorOffset;
+        
+        sensorOffset_Projected	= [];
+        sensorOffset_h            = cart2hom(sensorOffset); 
+        
+        for i = 1:length(sensorOffset_h)
+            [x_cap, flag, relres, iter]   = lsqr(bodyX3Y3Z3(:,1:2), sensorOffset_h(i,1:3)', 1e-10);
+            p       = bodyX3Y3Z3(:,1:2) * x_cap;
+            sensorOffset_Projected  = [sensorOffset_Projected, p];
+        end  
+        
         %% visualisation in body-fixed frame
-        limit = 1.2*max(max(abs(intersects)));
-        h1 = visualise(dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on Body Frame');
+        limit1 = max(max(abs(dis_c)));
+            limit2 = max(max(abs(x3y3z3)));
+            limit = 1.2*max([limit1, limit2]);
+            h1 = visualise(sensorOffset, sensorOffset_Projected, dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on Body Frame');
         
         %% visualisation of matlab simulator (in world frame)
         
@@ -290,7 +325,7 @@ while (true)
         
         x3y3z3 = x3y3z3';
         
-        h2 = visualise(dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on World Frame');
+        h2 = visualise(uav.sensorOffsetWorld(:,1:3), sensorOffset', dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on World Frame');
         
         %% Convert of TROne Frame of Reference
         
@@ -308,21 +343,23 @@ while (true)
         
         figure()
         % plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*--b');
-        plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
+%         plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
+        plot([ranges_c(1:3,1)], [ranges_c(1:3,2)], '*--b');       
         hold on
+        plot([ranges_c(4:6,1)], [ranges_c(4:6,2)], '*--b');    
         
         plot(line_x, (rhoL-line_x*sin(alpha)) / cos (alpha), '--g');
         plot(line_x, (rhoR-line_x*sin(alpha)) / cos (alpha), '--g');
         
         % ray
         for i=1:length(ranges_c)
-            plot([0 ranges_c(i,1)], [0 ranges_c(i,2)], '*--b');
+            plot([uav.sensorOffsetWorld(i,1) ranges_c(i,1)], [uav.sensorOffsetWorld(i,2) ranges_c(i,2)], '*--b');
         end
         
         centre = (width/2)-rhoR;
         plot(0, -centre, 'xk');
         axis([-limit limit -limit limit])
-        alpha     = rad2deg(alpha)
+        alpha  = rad2deg(alpha)
         xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha)]});
         title('Simulated TeraRangers Reading on World Frame');
         hold off
@@ -337,7 +374,7 @@ while (true)
         
         limit = 1.2*max(max(abs(out)));
         
-        h3 = visualise(out, out_xy', limit, 'Ground Truth TeraRangers Reading on World Frame');
+        h3 = visualise(uav.sensorOffsetWorld(:,1:3), sensorOffset', out, out_xy', limit, 'Ground Truth TeraRangers Reading on World Frame');
         
         % plot tunnel surface
         figure(h3); hold on;
@@ -371,6 +408,7 @@ P0          = uav.uavPos(1:3);
 
 % right tunnel wall intersect
 for i=1:3
+    P0          = uav.uavPos(1:3) + uav.sensorOffsetWorld(i,1:3)';
     P1          = rPoints(i,1:3)';
     tmp         = PlaneLineIntersect(P0,P1,-V0,n);
     out         = [out, tmp];
@@ -378,6 +416,7 @@ end
 
 % left tunnel wall intersect
 for i=1:3
+    P0          = uav.uavPos(1:3) + uav.sensorOffsetWorld(i+3,1:3)';
     P1          = lPoints(i,1:3)';
     tmp         = PlaneLineIntersect(P0,P1,V0,n);
     out         = [out, tmp];
@@ -394,7 +433,7 @@ function out = getRanges(uav, rangesXY)
 out = [];
 
 for i=1:6
-    out = [out; norm(-uav.uavPos(1:3)+rangesXY(:,i)), uav.sensorOrientation(i,2)];
+    out = [out; norm(-uav.uavPos(1:3)-uav.sensorOffsetWorld(i,1:3)'+rangesXY(:,i)), uav.sensorOrientation(i,2)];
 end
 
 end
@@ -420,7 +459,7 @@ ej_new  = rotm * ej;
 
 end
 
-function h = visualise(actual_coord, projected_coord, limit, str)
+function h = visualise(sensor_coord, projectSensor_coord, actual_coord, projected_coord, limit, str)
 
 h = figure();
 
@@ -433,7 +472,7 @@ plot3(actual_coord(4:6,1), actual_coord(4:6,2), actual_coord(4:6,3), '*-k');
 
 % ray
 for i=1:length(actual_coord)
-    plot3([0 actual_coord(i,1)], [0 actual_coord(i,2)], [0, actual_coord(i,3)], '*--b');
+    plot3([sensor_coord(i,1) actual_coord(i,1)], [sensor_coord(i,2) actual_coord(i,2)], [sensor_coord(i,3) actual_coord(i,3)], '*--b');
 end
 
 % right line (projected)
@@ -445,7 +484,7 @@ plot3(projected_coord(1,4:6), projected_coord(2,4:6), projected_coord(3,4:6), '*
 
 % ray (projected)
 for i=1:length(projected_coord)
-    plot3([0 projected_coord(1,i)], [0 projected_coord(2,i)], [0, projected_coord(3,i)], '*--r');
+    plot3([projectSensor_coord(1,i) projected_coord(1,i)], [projectSensor_coord(2,i) projected_coord(2,i)], [projectSensor_coord(3,i) projected_coord(3,i)], '*--r');
 end
 
 % plot axis

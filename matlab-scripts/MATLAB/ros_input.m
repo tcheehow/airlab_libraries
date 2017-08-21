@@ -22,12 +22,19 @@ if (edison)
         v5.Range_, pi;
         v6.Range_, 3*pi/4];
 else
-    ranges = [v1.Ranges, -pi/4;
+    % updated for back orientation changes
+        ranges = [v1.Ranges, -pi/4;
         v2.Ranges, -pi/2;
-        v3.Ranges, -3*pi/4;
-        v4.Ranges, 3*pi/4;
+        v3.Ranges, -pi/2;
+        v4.Ranges, pi/2;
         v5.Ranges, pi/2;
         v6.Ranges, pi/4];
+%     ranges = [v1.Ranges, -pi/4;
+%         v2.Ranges, -pi/2;
+%         v3.Ranges, -3*pi/4;
+%         v4.Ranges, 3*pi/4;
+%         v5.Ranges, pi/2;
+%         v6.Ranges, pi/4];
 end
 
 end

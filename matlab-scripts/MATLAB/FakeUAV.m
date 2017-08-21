@@ -3,6 +3,8 @@ classdef FakeUAV
     %   Detailed explanation goes here
     
     properties
+        sensorOffset % body
+        sensorOffsetWorld
         troneReadings
         sensorOrientation % polar
         sensorOrientationXY % cartesian
@@ -17,14 +19,27 @@ classdef FakeUAV
                 obj.sensorOrientation = ...
                     [1, -pi/4;
                     1, -pi/2;
-                    1, -3*pi/4;
-                    1, 3*pi/4;
+                    1, -pi/2;
+                    1, pi/2;
                     1, pi/2;
                     1, pi/4];
                 obj.uavOrientation      = orient;
                 obj.uavPos              = pos;
                 obj.uavROTM             = rpy(obj.uavOrientation, obj.uavPos);
                 obj.sensorOrientationXY = obj.sensorPol2Cart();
+                obj.sensorOffset        = ...
+                    [0.2256, -0.1741 0;
+                    0.1739 -0.1915 0;
+                    -0.1739 -0.1915 0;
+                    -0.1739 0.1915 0;
+                    0.1739 0.1915 0;
+                    0.2256 0.1741 0];
+                obj.sensorOffsetWorld = cart2hom(obj.sensorOffset);
+                for i=1:length(obj.sensorOffsetWorld)
+                    v = obj.sensorOffsetWorld(i,:)';
+                    v = obj.uavROTM * v;
+                    obj.sensorOffsetWorld(i,:) = v';
+                end
             else
                 error('requires two arguments [yaw, pitch, roll] and [x y z s]')
             end
@@ -45,13 +60,13 @@ classdef FakeUAV
             cart    = cart2hom(cart);
         end
         
-        function cart = getSensorXY_World(obj)
+        function cart = getSensorXY_World(obj)            
             % body-frame xy-coordinate of trone ray
             % (x6,y6)o     o(x1,y1)
             % (x5,y5)o     o(x2,y2)
             % (x4,y4)o     o(x3,y3)
             
-            sensor_cart     = obj.sensorOrientationXY;
+            sensor_cart             = obj.sensorOrientationXY;         
             
             % rotate all sensor ray to world frame using known rotation
             % matrix and translation between the uav frame origin and the
@@ -59,7 +74,9 @@ classdef FakeUAV
             
             for i=1:length(sensor_cart)
                 v = sensor_cart(i,:)';
-                v = obj.uavROTM * v;
+                rotm = obj.uavROTM;
+                rotm(1:3,end) = rotm(1:3,end) + obj.sensorOffsetWorld(i,1:3)'; 
+                v = rotm * v;
                 sensor_cart(i,:) = v';
             end
             

@@ -17,10 +17,10 @@ classdef RealUAV
                 obj.sensorOrientation = ...
                     [1, -pi/4;
                     1, -pi/2;
-                    1, -3*pi/4;
+                    1, -pi/2;
                     1, 3*pi/4;
                     1, pi/2;
-                    1, pi/4];
+                    1, pi/2];
                 obj.uavOrientation      = orient;
                 obj.uavPos              = pos;
                 obj.uavROTM             = rpy(obj.uavOrientation, obj.uavPos);
