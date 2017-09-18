@@ -15,12 +15,12 @@ function ranges = ros_input(v1, v2, v3, v4, v5, v6, edison)
 %     v3.Ranges, -pi/4;
 %     v2.Ranges, -3*pi/4];
 if (edison)
-    ranges = [v1.Range_, pi/4;
-        v2.Range_, 0;
-        v3.Range_, -pi/4;
-        v4.Range_, -3*pi/4;
-        v5.Range_, pi;
-        v6.Range_, 3*pi/4];
+    ranges = [v1.Range_, -pi/4;
+        v2.Range_, -pi/2;
+        v3.Range_, -pi/2;
+        v4.Range_, pi/2;
+        v5.Range_, pi/2;
+        v6.Range_, pi/4];
 else
     % updated for back orientation changes
         ranges = [v1.Ranges, -pi/4;
