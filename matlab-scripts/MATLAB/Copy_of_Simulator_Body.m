@@ -1,16 +1,14 @@
-function Simulator_Body()
+function Copy_of_Simulator_Body()
 
 close all;
 clear;
 
 gazebo = false;
+edison = false;
 niceplots = false;
 rosbag = false;
 
 if (gazebo)
-    
-    rosshutdown;
-    rosinit;
     
     sensorOffset = ...
         [0.2256, -0.1741 0;
@@ -19,6 +17,16 @@ if (gazebo)
         -0.1739 0.1915 0;
         0.1739 0.1915 0;
         0.2256 0.1741 0];
+    
+    if (edison)
+        
+    rosshutdown;
+    rosinit('http://edison:11311');
+        
+    else
+        
+    rosshutdown;
+    rosinit;
     
     laser1 = rossubscriber('/teraranger1/laser/scan');
     laser2 = rossubscriber('/teraranger2/laser/scan');
@@ -33,6 +41,11 @@ if (gazebo)
     yaw_acc = [];
     alpha_acc = [];
     com_h = figure()
+        
+    end
+        
+    
+    
     
 elseif (rosbag)
     
@@ -57,9 +70,14 @@ elseif (rosbag)
     
 else
     
+    rosshutdown;
+    rosinit('http://edison:11311');
+    
+    fake_local_pose = rospublisher('/mavros/local_position/pose', 'geometry_msgs/PoseStamped');
+    
     %% initialize uav instance with body frame angles and offset
     
-    yaw     = 0;    pitch   = pi/4;    roll    = pi/4;
+    yaw     = pi/8;    pitch   = pi/8;    roll    = pi/6;
     
     uav_pos = [0;0;0;1]; % offset of the UAV = [x, y, z, s]  homogeneous coordinate
     
@@ -80,6 +98,20 @@ else
     intersects  = getRangesXY(uav, V0, n); %this solution is in the body frame
     dis         = getRanges(uav, intersects);
     
+    fake_trhub = rospublisher('/teraranger_hub_one', 'teraranger_array/RangeArray');
+    rangeArray_msg = rosmessage(fake_trhub);
+    ranges = []
+    for i=1:length(dis)
+        ranges_msg = rosmessage('sensor_msgs/Range');
+        ranges_msg.Range_ = dis(i,1);
+        ranges = [ranges; ...
+            ranges_msg];
+    end
+   rangeArray_msg.Ranges = ranges;
+    
+    
+    lsq_h = figure(1)
+    surf_h = figure(2)
     
 end
 
@@ -323,7 +355,7 @@ while (true)
         limit1 = max(max(abs(dis_c)));
             limit2 = max(max(abs(x3y3z3)));
             limit = 1.2*max([limit1, limit2]);
-            h1 = visualise(sensorOffset, sensorOffset_Projected, dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on Body Frame');
+%             h1 = visualise(sensorOffset, sensorOffset_Projected, dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on Body Frame');
         
         %% visualisation of matlab simulator (in world frame)
         
@@ -350,7 +382,7 @@ while (true)
         
         x3y3z3 = x3y3z3';
         
-        h2 = visualise(uav.sensorOffsetWorld(:,1:3), sensorOffset', dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on World Frame');
+%         h2 = visualise(uav.sensorOffsetWorld(:,1:3), sensorOffset', dis_c, x3y3z3, limit, 'Simulated TeraRangers Reading on World Frame');
         
         %% Convert of TROne Frame of Reference
         
@@ -366,7 +398,7 @@ while (true)
         width = abs(rhoL) + abs(rhoR);
         line_x = [-limit:0.1:limit];
         
-        figure()
+        figure(lsq_h)
         % plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*--b');
 %         plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
         plot([ranges_c(1:3,1)], [ranges_c(1:3,2)], '*--b');       
@@ -399,10 +431,10 @@ while (true)
         
         limit = 1.2*max(max(abs(out)));
         
-        h3 = visualise(uav.sensorOffsetWorld(:,1:3), sensorOffset', out, out_xy', limit, 'Ground Truth TeraRangers Reading on World Frame');
+        surf_h = visualise(surf_h, uav.sensorOffsetWorld(:,1:3), sensorOffset', out, out_xy', limit, 'Ground Truth TeraRangers Reading on World Frame');
         
         % plot tunnel surface
-        figure(h3); hold on;
+        figure(surf_h); hold on;
         [X, Z]  = meshgrid(-limit:1:limit, -limit:1:limit);
         Y       = 2.5 * ones(size(X));
         CO(:,:,1) = zeros(size(Z));
@@ -410,11 +442,13 @@ while (true)
         CO(:,:,3) = zeros(size(Z));
         surf(X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
         surf(X,-Y,Z,CO,'EdgeColor','none','FaceAlpha',0.2);
-        yaw     = rad2deg(yaw)
+%         yaw     = rad2deg(yaw)
         title('Simulated TeraRangers Reading Ground Truth');
         xlabel({['yaw error: ' num2str(yaw)]});
         hold off;
     end
+    
+    send(fake_trhub, rangeArray_msg)
     
 end
 
@@ -484,9 +518,9 @@ ej_new  = rotm * ej;
 
 end
 
-function h = visualise(sensor_coord, projectSensor_coord, actual_coord, projected_coord, limit, str)
+function h = visualise(handle, sensor_coord, projectSensor_coord, actual_coord, projected_coord, limit, str)
 
-h = figure();
+h = figure(handle);
 
 % right line
 plot3(actual_coord(1:3,1), actual_coord(1:3,2), actual_coord(1:3,3), '*-k');
@@ -541,5 +575,6 @@ zlim([-limit limit])
 % yaw     = rad2deg(yaw)
 title(str);
 % xlabel({['yaw error: ' num2str(yaw)]});
+hold off
 
 end

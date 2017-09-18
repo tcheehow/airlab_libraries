@@ -7,7 +7,7 @@ edison = false;
 rosshutdown;
 
 if (edison)
-     rosinit('http://192.168.0.106:11311');
+     rosinit('http://192.168.3.146:11311');
 %     rosinit;
 else
     rosinit;
