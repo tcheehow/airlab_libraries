@@ -38,7 +38,7 @@ if (gazebo)
 elseif (edison)
         
     rosshutdown;
-    rosinit('http://192.168.4.3:11311');
+    rosinit('http://192.168.4.4:11311');
     
 %     sensorOffset = ...
 %         [0.2256, -0.1741 0;
@@ -244,33 +244,59 @@ while (true)
         %   Using simulated terarangers reading as seen from observator frame of
         %   reference
         
-        ranges_c = x3y3z3';
+%         ranges_c = x3y3z3'
+%         
+%         limit = 1.2*max(max(abs(ranges_c)));
+%         
+%         [alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2));
+%         width = abs(rhoL) + abs(rhoR);
+%         line_x = [-limit:0.1:limit];
+%         
+%         figure(lsq_h)
+%         % plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*--b');
+%         plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
+%         hold on
+%         
+%         plot(line_x, (rhoL-line_x*sin(alpha)) / cos (alpha), '--g');
+%         plot(line_x, (rhoR-line_x*sin(alpha)) / cos (alpha), '--g');
+%         
+%         % ray
+%         for i=1:length(ranges_c)
+%             plot([sensorOffset(i,1) ranges_c(i,1)], [sensorOffset(i,2) ranges_c(i,2)], '*--b');
+%         end
+%         
+%         centre = (width/2)-rhoR;
+%         plot(0, -centre, 'xk');
+%         axis([-limit limit -limit limit]);
+%         alpha     = rad2deg(alpha);
+%         xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha)]});
+%         title('Simulated TeraRangers Reading on World Frame');
+%         hold off
+
+        %% visualisation of circle
+        ranges_c = x3y3z3'
         
         limit = 1.2*max(max(abs(ranges_c)));
-        
-        [alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2))
-        width = abs(rhoL) + abs(rhoR);
-        line_x = [-limit:0.1:limit];
+        [dx, dy, r] = circle_estimator(ranges_c(:,1:2))
         
         figure(lsq_h)
         % plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*--b');
         plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
         hold on
         
-        plot(line_x, (rhoL-line_x*sin(alpha)) / cos (alpha), '--g');
-        plot(line_x, (rhoR-line_x*sin(alpha)) / cos (alpha), '--g');
-        
-        % ray
         for i=1:length(ranges_c)
             plot([sensorOffset(i,1) ranges_c(i,1)], [sensorOffset(i,2) ranges_c(i,2)], '*--b');
         end
         
-        centre = (width/2)-rhoR;
-        plot(0, -centre, 'xk');
-        axis([-limit limit -limit limit])
-        alpha     = rad2deg(alpha)
-        xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha)]});
-        title('Simulated TeraRangers Reading on World Frame');
+        viscircles([dx, dy], [r]);
+        
+%         th = 0:pi/50:2*pi;
+%         xunit = r * cos(th) + dx;
+%         yunit = r * cos(th) + dy;
+%         plot(xunit, yunit);
+%         
+        axis([-limit limit -limit limit]);
+        axis equal
         hold off
         
         %% visualisation of matlab simulator (world frame) using ground truth
@@ -301,13 +327,13 @@ while (true)
         
         %% Compare Estimated Yaw with Gazebo Yaw
         
-        figure(com_h);
-        yaw_acc = [yaw_acc, yaw];
-        alpha_acc = [alpha_acc, deg2rad(alpha)];
-        plot(yaw_acc); hold on;
-        plot(alpha_acc); hold off;
-        legend('yaw', 'estimated yaw');
-        ylim([-pi/2 pi/2]);
+%         figure(com_h);
+%         yaw_acc = [yaw_acc, yaw];
+%         alpha_acc = [alpha_acc, deg2rad(alpha)];
+%         plot(yaw_acc); hold on;
+%         plot(alpha_acc); hold off;
+%         legend('yaw', 'estimated yaw');
+%         ylim([-pi/2 pi/2]);
         
     elseif(edison)
         vs = receive(lasers);
@@ -351,6 +377,8 @@ while (true)
             p       = bodyX3Y3Z3(:,1:2) * x_cap;
             x3y3z3  = [x3y3z3, p];
         end
+        
+        x3y3z3
         
         sensorOffset = sensorOffset;
         
@@ -409,36 +437,62 @@ while (true)
         %   Using simulated terarangers reading as seen from observator frame of
         %   reference
         
-        limit = 1.2*max(max(abs(ranges_c)));
+%         limit = 1.2*max(max(abs(ranges_c)));
+%         
+%         [alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2));
+%         width = abs(rhoL) + abs(rhoR);
+%         line_x = [-limit:0.1:limit];
+%         
+%         figure(lsq_h)
+%         % plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*--b');
+% %         plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
+%         plot([ranges_c(1:3,1)], [ranges_c(1:3,2)], '*--b');       
+%         hold on
+%         plot([ranges_c(4:6,1)], [ranges_c(4:6,2)], '*--b');    
+%         
+%         plot(line_x, (rhoL-line_x*sin(alpha)) / cos (alpha), '--g');
+%         plot(line_x, (rhoR-line_x*sin(alpha)) / cos (alpha), '--g');
+%         
+%         uav_pos = [0;0;0;1];
+%         uav     = FakeUAV([alpha,pitch,roll], uav_pos);
+%         
+%         % ray
+%         for i=1:length(ranges_c)
+%             plot([uav.sensorOffsetWorld(i,1) ranges_c(i,1)], [uav.sensorOffsetWorld(i,2) ranges_c(i,2)], '*--b');
+%         end
+%         
+%         centre = (width/2)-rhoR;
+%         plot(0, -centre, 'xk');
+%         axis([-limit limit -limit limit])
+%         alphad  = rad2deg(alpha)
+%         xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha) ' rad'],['yaw error: ' num2str(alphad) ' deg']});
+%         title('Simulated TeraRangers Reading on World Frame');
+%         hold off
+
+%% visualisation of circle
+%         ranges_c = x3y3z3'
         
-        [alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2))
-        width = abs(rhoL) + abs(rhoR)
-        line_x = [-limit:0.1:limit];
+        limit = 1.2*max(max(abs(ranges_c)));
+        [dx, dy, r] = circle_estimator(ranges_c(:,1:2))
         
         figure(lsq_h)
         % plot(-[ranges_c(:,2);ranges_c(1,2)], [ranges_c(:,1); ranges_c(1,1)], '*--b');
-%         plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
-        plot([ranges_c(1:3,1)], [ranges_c(1:3,2)], '*--b');       
+        plot([ranges_c(:,1); ranges_c(1,1)], [ranges_c(:,2);ranges_c(1,2)], '*--b');
         hold on
-        plot([ranges_c(4:6,1)], [ranges_c(4:6,2)], '*--b');    
         
-        plot(line_x, (rhoL-line_x*sin(alpha)) / cos (alpha), '--g');
-        plot(line_x, (rhoR-line_x*sin(alpha)) / cos (alpha), '--g');
-        
-        uav_pos = [0;0;0;1];
-        uav     = FakeUAV([alpha,pitch,roll], uav_pos);
-        
-        % ray
         for i=1:length(ranges_c)
-            plot([uav.sensorOffsetWorld(i,1) ranges_c(i,1)], [uav.sensorOffsetWorld(i,2) ranges_c(i,2)], '*--b');
+            plot([sensorOffset(i,1) ranges_c(i,1)], [sensorOffset(i,2) ranges_c(i,2)], '*--b');
         end
         
-        centre = (width/2)-rhoR;
-        plot(0, -centre, 'xk');
-        axis([-limit limit -limit limit])
-        alphad  = rad2deg(alpha)
-        xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha) ' rad'],['yaw error: ' num2str(alphad) ' deg']});
-        title('Simulated TeraRangers Reading on World Frame');
+        viscircles([dx, dy], [r]);
+        
+%         th = 0:pi/50:2*pi;
+%         xunit = r * cos(th) + dx;
+%         yunit = r * cos(th) + dy;
+%         plot(xunit, yunit);
+%         
+        axis([-limit limit -limit limit]);
+        axis equal
         hold off
         
         %% visualisation of matlab simulator (world frame) using ground truth

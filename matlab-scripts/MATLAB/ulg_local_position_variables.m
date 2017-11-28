@@ -12,7 +12,7 @@ clear
 close all
 
 %% Initialize variables.
-filename = 'C:\Users\Chee How\Desktop\Logs\Flight002 (Good)\log003_vehicle_local_position_0.csv';
+filename = '/home/airlab/airlab_ws/Logs/log003_vehicle_local_position_0.csv';
 delimiter = ',';
 startRow = 2;
 
@@ -127,6 +127,15 @@ for source_index = 1:length(timestamp)
     timestamp(source_index) = timestamp(source_index) - timestart;
     timestamp(source_index) = timestamp(source_index) * 1E-6;
 end
+
+% [timestamp_s,x_s,y_s,z_s,yaw_s,vx_s,vy_s,vz_s,acc_x,acc_y,acc_z] = importfile('/home/airlab/airlab_ws/Logs/log003_vehicle_local_position_setpoint_0.csv',2, 1285);
+% timestart_s = timestamp_s(1);
+% for source_index = 1:length(timestamp_s)
+%     timestamp_s(source_index) = timestamp_s(source_index) - timestart_s;
+%     timestamp_s(source_index) = timestamp_s(source_index) * 1E-6;
+% end
+
+
 z = -z;
 z = medfilt1(z,10);
 z = medfilt1(z,10);
@@ -136,10 +145,12 @@ z = medfilt1(z,10);
 % subplot(3,1,3), plot(timestamp, z);
 
 figure;
-t_start = 696 % ~ 71s into flight
-t_stop = 1060 % + 30s
+t_start = 786 % ~ 71s into flight
+t_stop = 1095 % + 30s
+y_setpoint = -0.16;
+y = y - y_setpoint;
 
-[Y, Z]      = meshgrid(0:1:(t_stop-t_start)/10, 0:1:2);
+[Y, Z]      = meshgrid(0:0.1:(t_stop-t_start)/10, 0:1:2);
 X           = 2.5 * ones(size(Y));
 CO(:,:,1)   = zeros(size(Z));
 CO(:,:,2)   = zeros(size(Z));
@@ -152,7 +163,7 @@ hold on;
 surf(-X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.5);
 
 % top tunnel wall
-[X1, Y1]      = meshgrid(-2.5:1:2.5, 0:1:(t_stop-t_start)/10);
+[X1, Y1]      = meshgrid(-2.5:1:2.5, 0:0.1:(t_stop-t_start)/10);
 Z1           = 2.0 * ones(size(X1));
 CO1(:,:,1)   = zeros(size(Z1));
 CO1(:,:,2)   = zeros(size(Z1));
@@ -166,12 +177,18 @@ CO1(:,:,2)   = (153/255)*ones(size(Z1));
 CO1(:,:,3)   = (255/255)*ones(size(Z1));
 surf(X1,Y1,Z1,CO1,'EdgeColor','none','FaceAlpha',1);
 xlabel('x (metres)')
-ylabel('t (seconds)')
+ylabel('time (seconds)')
 zlabel('altitude (metres)')
 % hold off
 
+% 3d tunnel animation
 plot3(y(t_start:t_stop), linspace(0,(t_stop-t_start)/10, length(y(t_start:t_stop))), z(t_start:t_stop), '-', 'Color', 'k');
 p = plot3(y(t_start), 0, z(t_start),'o','MarkerFaceColor','red'); 
+
+% 2d cross-section animation
+% % plot3(y(t_start:t_stop), linspace(0,(t_stop-t_start)/10, length(y(t_start:t_stop))), z(t_start:t_stop), '-', 'Color', 'k');
+% p = plot3(y(t_start), 0, z(t_start),'o','MarkerFaceColor','red'); 
+% view([0,0])
 
 xlim([-3 3])
 % ylim([0 30])
@@ -200,6 +217,18 @@ for i=t_start:t_stop
 % pause(0.1)
 % % hold off
 end
+
+% h_2d = figure();
+% for i=t_start:t_stop
+%     plot(y(i), z(i), 'o','MarkerFaceColor','red');
+%     hold on;
+%     plot(linspace(-3,3,100), linspace(0,2,100))
+%     xlim([-3 3])
+%     % ylim([0 30])
+%     ylim([0 2])
+%     axis equal
+%     pause(0.1)
+% end
 
 
 
