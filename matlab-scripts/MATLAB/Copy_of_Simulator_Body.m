@@ -38,15 +38,23 @@ if (gazebo)
 elseif (edison)
         
     rosshutdown;
-    rosinit('http://edison:11311');
+    rosinit('http://192.168.4.3:11311');
     
-    sensorOffset = ...
-        [0.2256, -0.1741 0;
-        0.1739 -0.1915 0;
-        -0.1739 -0.1915 0;
-        -0.1739 0.1915 0;
-        0.1739 0.1915 0;
-        0.2256 0.1741 0];
+%     sensorOffset = ...
+%         [0.2256, -0.1741 0;
+%         0.1739 -0.1915 0;
+%         -0.1739 -0.1915 0;
+%         -0.1739 0.1915 0;
+%         0.1739 0.1915 0;
+%         0.2256 0.1741 0];
+    
+     sensorOffset = ...
+        [0.2615, -0.154 0;
+        0.213 -0.169 0;
+        -0.213 -0.169 0;
+        -0.213 0.169 0;
+        0.213 0.169 0;
+        0.2615 0.154 0];
     
     lasers = rossubscriber('/teraranger_hub_one');
     state_roll = rossubscriber('/roll');
@@ -79,7 +87,7 @@ elseif (rosbag)
 else
     
     rosshutdown;
-    rosinit('http://edison:11311');
+    rosinit('http://192.168.4.3:11311');
     
     fake_local_pose = rospublisher('/mavros/local_position/pose', 'geometry_msgs/PoseStamped');
     
@@ -404,7 +412,7 @@ while (true)
         limit = 1.2*max(max(abs(ranges_c)));
         
         [alpha, rhoL, rhoR] = line_estimator(ranges_c(:,1:2))
-        width = abs(rhoL) + abs(rhoR);
+        width = abs(rhoL) + abs(rhoR)
         line_x = [-limit:0.1:limit];
         
         figure(lsq_h)
@@ -428,8 +436,8 @@ while (true)
         centre = (width/2)-rhoR;
         plot(0, -centre, 'xk');
         axis([-limit limit -limit limit])
-        alpha  = rad2deg(alpha)
-        xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha)]});
+        alphad  = rad2deg(alpha)
+        xlabel({['centre: ' num2str(centre)], ['yaw error: ' num2str(alpha) ' rad'],['yaw error: ' num2str(alphad) ' deg']});
         title('Simulated TeraRangers Reading on World Frame');
         hold off
         
@@ -458,6 +466,16 @@ while (true)
 %         title('Simulated TeraRangers Reading Ground Truth');
 %         xlabel({['yaw error: ' num2str(yaw)]});
 %         hold off;
+
+        %% Compare Estimated Yaw with Gazebo Yaw
+        
+%         figure(com_h);
+%         yaw_acc = [yaw_acc, yaw];
+%         alpha_acc = [alpha_acc, deg2rad(alpha)];
+%         plot(yaw_acc); hold on;
+%         plot(alpha_acc); hold off;
+%         legend('yaw', 'estimated yaw');
+%         ylim([-pi/2 pi/2]);
         
     else
         %%  Project the Vectors to Horizontal Plane (Fixed Axis Rotation, NOT WORKING)

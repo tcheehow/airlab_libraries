@@ -1,3 +1,6 @@
 # exclude all matlab temp files that ends with ~
 
 *~
+*.mp4
+*.avi
+*.bag.active
