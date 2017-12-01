@@ -15,7 +15,7 @@ close all
 % execute pyulog logxxx.ulg
 
 %% Initialize variables.
-filename = 'Logs/sess103/log001_vehicle_local_position_0.csv';
+filename = 'Logs/sess076/log004_vehicle_local_position_0.csv';
 delimiter = ',';
 startRow = 2;
 
@@ -140,69 +140,91 @@ end
 
 
 z = -z;
-z = medfilt1(z,10);
-z = medfilt1(z,10);
+% z = medfilt1(z,10);
+% z = medfilt1(z,10);
 % figure;
 % subplot(3,1,1), plot(timestamp, x);
 % subplot(3,1,2), plot(timestamp, y);
 % subplot(3,1,3), plot(timestamp, z);
 
 figure;
-t_start = 1; % ~ 0s into flight
+t_start = 50; % (video start) at ~ 5s into flight 
 t_stop = length(timestamp); % ~ -5s from flight end
-y_setpoint = 0.043675; % y setpoint offset
+y_setpoint = 0.2975; % y setpoint offset
 y = y - y_setpoint;
-x_setpoint = 0.162752;
+x_setpoint = 0.0;
 x = x - x_setpoint;
 
-pos_start = 445;
-pos_end = 2564;
-x(1:pos_start) = 0;
-y(1:pos_start) = 0;
+pos_start = 193; % ~19.5s after arming
+pos_end = 651; % ~45.5s after pos start = 65s after arming
+pos_mid = 474; % 40s after takeoff (8s) i.e. 8s + 40s = 48
+% x(1:pos_start) = 0;
+% y(1:pos_start) = 0;
+% 
+% x(pos_end:end) = 0;
+% y(pos_end:end) = 0;
 
-x(pos_end:end) = 0;
-y(pos_end:end) = 0;
+t = zeros(size(timestamp));
+t(pos_start:pos_mid) = linspace(0,(pos_mid-pos_start)/10, length(y(pos_start:pos_mid)));
 
-% generate for tunnel boundaries
-R = 1.5;
-[X, Y, Z]      = cylinder(R,100);
-Z = (Z*3);
-% Z           = meshgrid(0::2)
+t_temp = linspace(0,(pos_mid-pos_start)/10, length(y(pos_mid:pos_end)));
+t_temp = t_temp - t_temp(end);
+t_temp = -t_temp;
+
+t(pos_mid:pos_end) = t_temp;
+
+[Y, Z]      = meshgrid(0:0.1:(pos_mid-pos_start)/10, 0:1:2);
+X           = 2.5 * ones(size(Y));
 CO(:,:,1)   = zeros(size(Z));
 CO(:,:,2)   = zeros(size(Z));
 CO(:,:,3)   = zeros(size(Z));
 
-% plot cylinder tunnel wall
-
 % left tunnel wall
-surf(X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.35);
+surf(X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.5);
 hold on;
+% right tunnel wall
+surf(-X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.5);
 
 % top tunnel wall
-% [X1, Y1]      = meshgrid(-2.5:1:2.5, -2.5:1:2.5);
-% Z1           = 2.0 * ones(size(X1));
-% CO1(:,:,1)   = zeros(size(Z1));
-% CO1(:,:,2)   = zeros(size(Z1));
-% CO1(:,:,3)   = zeros(size(Z1));
-% surf(X1,Y1,Z1,'EdgeColor','none','FaceAlpha',0.1);
+[X1, Y1]      = meshgrid(-2.5:1:2.5, 0:0.1:(pos_mid-pos_start)/10);
+Z1           = 2.0 * ones(size(X1));
+CO1(:,:,1)   = zeros(size(Z1));
+CO1(:,:,2)   = zeros(size(Z1));
+CO1(:,:,3)   = zeros(size(Z1));
+surf(X1,Y1,Z1,'EdgeColor','none','FaceAlpha',0.1);
 
 % bottom tunnel wall
-% Z1          = 0 * ones(size(X1));
-% CO1(:,:,1)   = (51/255)*ones(size(Z1));
-% CO1(:,:,2)   = (153/255)*ones(size(Z1));
-% CO1(:,:,3)   = (255/255)*ones(size(Z1));
-% surf(X1,Y1,Z1,CO1,'EdgeColor','none','FaceAlpha',1);
-xlabel('x (m)')
-ylabel('y (m)')
-zlabel('altitude (m)')
+Z1          = 0 * ones(size(X1));
+CO1(:,:,1)   = (51/255)*ones(size(Z1));
+CO1(:,:,2)   = (153/255)*ones(size(Z1));
+CO1(:,:,3)   = (255/255)*ones(size(Z1));
+surf(X1,Y1,Z1,CO1,'EdgeColor','none','FaceAlpha',1);
+xlabel('y (metres)')
+ylabel('time (seconds)')
+zlabel('altitude (metres)')
 % hold off
 
+xlim([-3 3])
+% ylim([0 30])
+ylim([0 (pos_mid-pos_start)/10])
+zlim([0 3])
+axis equal
+
 %% 3d tunnel animation
+
+% x-axis is y(m)
+% y-axis is time(s)
+%
+
 % plot3(x(t_start:t_stop), y(t_start:t_stop), z(t_start:t_stop), '-', 'Color', 'k');
-p = plot3(x(t_start), y(t_start), z(t_start), 'Marker', 'o','MarkerFaceColor','red', 'MarkerEdgeColor','red', 'MarkerSize', 12);
-py = plot3(-1.5, y(t_start), 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
-px = plot3(x(t_start), 1.5, 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
-pz = plot3(-1.5, -1.5, z(t_start), 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
+p = plot3(y(t_start), t(t_start), z(t_start), 'Marker', 'o','MarkerFaceColor','red', 'MarkerEdgeColor','red', 'MarkerSize', 12);
+
+% plotting y-axis (time) shadow
+py = plot3(-2.5, t(t_start), 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
+% plotting x-axis (y) shadow
+px = plot3(y(t_start), 0, 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
+% plotting z-axis (time) shadow
+pz = plot3(-2.5, max(t), z(t_start), 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
 % 2d cross-section animation
 % % plot3(y(t_start:t_stop), linspace(0,(t_stop-t_start)/10, length(y(t_start:t_stop))), z(t_start:t_stop), '-', 'Color', 'k');
 % p = plot3(y(t_start), 0, z(t_start),'o','MarkerFaceColor','red');
@@ -219,27 +241,27 @@ history_h1.Color = 'yellow';
 % history_count = 0;
 % history_n = 20;
 
-xlim([-R R])
-% ylim([0 30])
-ylim([-R R])
-zlim([0 5])
-axis equal
-el = 90;
-% az = -51 - 90;
-az = 0;
-set(gca, 'YDir', 'reverse')
-% view([az, el]);
-animate = false;
+% xlim([-R R])
+% % ylim([0 30])
+% ylim([-R R])
+% zlim([0 5])
+% axis equal
+% el = 90;
+% % az = -51 - 90;
+% az = 0;
+% set(gca, 'YDir', 'reverse')
+% % view([az, el]);
+animate = true;
 
 if (animate)
     
-    v = VideoWriter('output_3d.avi', 'Uncompressed AVI');
+    v = VideoWriter('output_hor_3d.avi', 'Uncompressed AVI');
     
     open(v);
     
     for i=t_start:t_stop
         % add trail
-        addpoints(history_h1, x(i), y(i), z(i));
+        addpoints(history_h1, y(i), t(i), z(i));
         %     addpoints(history_h1, x(i), y(i), 0);
         
         % LOL can just use MaximumNumPoints instead
@@ -299,26 +321,27 @@ if (animate)
         if (i >= pos_start && i<= pos_end)
             p.MarkerFaceColor = [0 1 0];
             p.MarkerEdgeColor = [0 1 0];
-            history_h1.MaximumNumPoints = 50;
+            history_h1.MaximumNumPoints = 800;
         else
             p.MarkerFaceColor = 'red';
             p.MarkerEdgeColor = 'red';
             history_h1.MaximumNumPoints = 1;
         end
         
-        p.XData = x(i);
-        p.YData = y(i);
+        p.XData = y(i);
+        p.YData = t(i);
         p.ZData = z(i);
         
-        py.XData = -1.5; py.YData = y(i); py.ZData = 0;
-        px.XData = x(i); px.YData = 1.5; px.ZData = 0;
-        pz.XData = -1.5; pz.YData = -1.5; pz.ZData = z(i);
+        py.XData = -2.5; py.YData = t(i); py.ZData = 0;
+        px.XData = y(i); px.YData = 0; px.ZData = 0;
+        pz.XData = -2.5; pz.YData = max(t); pz.ZData = z(i);
         
         
-        pause(0.1)
+%         pause(0.1)
         drawnow
         frame = getframe(gcf);
-        writeVideo(v, frame);
+        F(i-t_start+1) = frame;
+%         writeVideo(v, frame);
         axis equal
         % % hold on;
         % % plot3(y(i), timestamp(i), z(i), '.');
@@ -369,8 +392,8 @@ end
 % end
 
 %% Calculate Errors
-
-% RMS
+if (false) 
+    % RMS
 x_abs = abs(x(pos_start:pos_end));;
 x_rms = rms(x(pos_start:pos_end))
 x_max = max(abs(x(pos_start:pos_end)))
@@ -452,6 +475,8 @@ xlim([0 z_distance(end)])
 % % plot(z(pos_start:pos_end)); 
 % hold on;
 % plot(z_r, '--');plot(z_v, '.-');plot(z_distance);
+end
+
 
 %% Clear temporary variables
 clearvars filename delimiter startRow formatSpec fileID dataArray ans;
