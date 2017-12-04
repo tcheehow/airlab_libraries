@@ -229,7 +229,7 @@ el = 90;
 az = 0;
 set(gca, 'YDir', 'reverse')
 % view([az, el]);
-animate = false;
+animate = true;
 
 if (animate)
     
@@ -315,7 +315,7 @@ if (animate)
         pz.XData = -1.5; pz.YData = -1.5; pz.ZData = z(i);
         
         
-        pause(0.1)
+%         pause(0.1)
         drawnow
         frame = getframe(gcf);
         writeVideo(v, frame);
@@ -370,7 +370,11 @@ end
 
 %% Calculate Errors
 
-% RMS
+errors = false;
+
+if (errors)
+    
+    % RMS
 x_abs = abs(x(pos_start:pos_end));;
 x_rms = rms(x(pos_start:pos_end))
 x_max = max(abs(x(pos_start:pos_end)))
@@ -452,6 +456,10 @@ xlim([0 z_distance(end)])
 % % plot(z(pos_start:pos_end)); 
 % hold on;
 % plot(z_r, '--');plot(z_v, '.-');plot(z_distance);
+
+    
+end
+
 
 %% Clear temporary variables
 clearvars filename delimiter startRow formatSpec fileID dataArray ans;

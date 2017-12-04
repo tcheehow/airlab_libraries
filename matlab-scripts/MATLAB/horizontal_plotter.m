@@ -163,18 +163,26 @@ pos_mid = 474; % 40s after takeoff (8s) i.e. 8s + 40s = 48
 % 
 % x(pos_end:end) = 0;
 % y(pos_end:end) = 0;
+z(end) = 0;
 
-t = zeros(size(timestamp));
-t(pos_start:pos_mid) = linspace(0,(pos_mid-pos_start)/10, length(y(pos_start:pos_mid)));
+t(pos_start:pos_end) = linspace(0,(pos_end-pos_start)/10, length(y(pos_start:pos_end)));
+t(pos_end+1:t_stop) = t(pos_end);
 
-t_temp = linspace(0,(pos_mid-pos_start)/10, length(y(pos_mid:pos_end)));
-t_temp = t_temp - t_temp(end);
-t_temp = -t_temp;
+% t = zeros(size(timestamp));
+% t(pos_start:pos_mid) = linspace(0,(pos_mid-pos_start)/10, length(y(pos_start:pos_mid)));
+% 
+% t_temp = linspace(0,(pos_mid-pos_start)/10, length(y(pos_mid:t_stop)));
+% t_temp = t_temp - t_temp(end);
+% t_temp = -t_temp;
+% 
+% t(pos_mid:t_stop) = t_temp;
 
-t(pos_mid:pos_end) = t_temp;
 
-[Y, Z]      = meshgrid(0:0.1:(pos_mid-pos_start)/10, 0:1:2);
-X           = 2.5 * ones(size(Y));
+width = 4.2;
+height = 2.6;
+
+[Y, Z]      = meshgrid(0:0.1:(pos_end-pos_start)/10, 0:0.1:height);
+X           = width/2 * ones(size(Y));
 CO(:,:,1)   = zeros(size(Z));
 CO(:,:,2)   = zeros(size(Z));
 CO(:,:,3)   = zeros(size(Z));
@@ -185,9 +193,11 @@ hold on;
 % right tunnel wall
 surf(-X,Y,Z,CO,'EdgeColor','none','FaceAlpha',0.5);
 
+
+
 % top tunnel wall
-[X1, Y1]      = meshgrid(-2.5:1:2.5, 0:0.1:(pos_mid-pos_start)/10);
-Z1           = 2.0 * ones(size(X1));
+[X1, Y1]      = meshgrid(-width/2:0.1:width/2, 0:0.1:(pos_end-pos_start)/10);
+Z1           = height * ones(size(X1));
 CO1(:,:,1)   = zeros(size(Z1));
 CO1(:,:,2)   = zeros(size(Z1));
 CO1(:,:,3)   = zeros(size(Z1));
@@ -219,19 +229,18 @@ axis equal
 % plot3(x(t_start:t_stop), y(t_start:t_stop), z(t_start:t_stop), '-', 'Color', 'k');
 p = plot3(y(t_start), t(t_start), z(t_start), 'Marker', 'o','MarkerFaceColor','red', 'MarkerEdgeColor','red', 'MarkerSize', 12);
 
-% plotting y-axis (time) shadow
-py = plot3(2.5, t(t_start), 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
+
 % plotting x-axis (y) shadow
 px = plot3(y(t_start), 0, 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
 % plotting z-axis (time) shadow
-pz = plot3(-2.5, 0, z(t_start), 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
+pz = plot3(-width/2, 0, z(t_start), 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
 % 2d cross-section animation
 % % plot3(y(t_start:t_stop), linspace(0,(t_stop-t_start)/10, length(y(t_start:t_stop))), z(t_start:t_stop), '-', 'Color', 'k');
 % p = plot3(y(t_start), 0, z(t_start),'o','MarkerFaceColor','red');
 % view([0,0])
 
 history_h1 = animatedline;
-history_h1.LineWidth = 2;
+history_h1.LineWidth = 4;
 history_h1.MaximumNumPoints = 800;
 history_h1.Color = 'yellow';
 
@@ -248,16 +257,30 @@ history_h2.Color = [245/255 145/255 50/255];
 % ylim([-R R])
 % zlim([0 5])
 % axis equal
-el = 29;
-az = -37 + 90;
-% az = 0;
-% set(gca, 'YDir', 'reverse')
-view([az, el]);
+
+view_3d = true;
+view_2d = ~view_3d;
+
+if (view_3d)
+    % plotting y-axis (time) shadow
+    py = plot3(width/2, t(t_start), 0, 'Marker', 'o','MarkerFaceColor',[0.5 0.5 0.5], 'MarkerEdgeColor','[0.5 0.5 0.5]', 'MarkerSize', 6);
+    el = 29;
+    az = -37 + 90;
+    % az = 0;
+    % set(gca, 'YDir', 'reverse')
+    view([az, el]);
+else
+    el = 0
+    az = 0
+    view([az, el])
+end
 animate = true;
 
-if (animate)
+
+if (animate && view_3d)
     
     v = VideoWriter('output_hor_3d.avi', 'Uncompressed AVI');
+    v.FrameRate = 10;
 %     
     open(v);
     
@@ -324,9 +347,11 @@ if (animate)
             if (i <= pos_mid)
                 addpoints(history_h1, y(i), t(i), z(i));
             else
+                
                 addpoints(history_h2, y(i), t(i), z(i));
             end
-            addpoints(history_h1, y(i), t(i), z(i));
+            
+%             addpoints(history_h1, y(i), t(i), z(i));
             p.MarkerFaceColor = [0 1 0];
             p.MarkerEdgeColor = [0 1 0];
             history_h1.MaximumNumPoints = 800;
@@ -340,9 +365,9 @@ if (animate)
         p.YData = t(i);
         p.ZData = z(i);
         
-        py.XData = 2.5; py.YData = t(i); py.ZData = 0;
+        py.XData = width/2; py.YData = t(i); py.ZData = 0;
         px.XData = y(i); px.YData = 0; px.ZData = 0;
-        pz.XData = -2.5; pz.YData = 0; pz.ZData = z(i);
+        pz.XData = -width/2; pz.YData = 0; pz.ZData = z(i);
         
         
 %         pause(0.1)
@@ -374,6 +399,133 @@ if (animate)
     
 end
 
+%% 2d cross section
+
+if (animate && view_2d)
+    
+    history_h1.MaximumNumPoints = 400;
+    history_h2.MaximumNumPoints = 400;
+    
+    v = VideoWriter('output_hor_2d_history.avi', 'Uncompressed AVI');
+    v.FrameRate = 10;
+%     
+    open(v);
+    
+    for i=t_start:t_stop
+        % add trail
+%         addpoints(history_h1, y(i), t(i), z(i));
+        %     addpoints(history_h1, x(i), y(i), 0);
+        
+        % LOL can just use MaximumNumPoints instead
+        %     if (history_bool)
+        %         history_count = history_count + 1;
+        %         addpoints(history_h1, x(i), y(i), z(i));
+        %         if (history_count >= history_n)
+        %             history_count = 0;
+        %             clearpoints(history_h1);
+        %             for j = 0:history_n-1
+        %                 history_count = history_count + 1;
+        %                 addpoints(history_h2, x(i-j), y(i-j), z(i-j));
+        %             end
+        %
+        %             history_bool = ~history_bool;
+        %         end
+        %     else
+        %         history_count = history_count + 1;
+        %         addpoints(history_h2, x(i), y(i), z(i));
+        %         if (history_count >= history_n)
+        %             history_count = 0;
+        %             clearpoints(history_h2);
+        %             for j = 0:history_n-2
+        %                 history_count = history_count + 1;
+        %                 addpoints(history_h1, x(i-j), y(i-j), z(i-j));
+        %             end
+        %
+        %             history_bool = ~history_bool;
+        %         end
+        %     end
+        
+        
+        %     if (history_bool)
+        %         if (i>1)
+        %             addpoints(history_h1, x(i-1), y(i-1), z(i-1));
+        %         end
+        %     	addpoints(history_h2, x(i), y(i), z(i));
+        %     else
+        %         if (i>1)
+        %             addpoints(history_h1, x(i-1), y(i-1), z(i-1));
+        %         end
+        %     end
+        %
+        %     history_count = history_count + 1;
+        %
+        %     % remove trail
+        %
+        %     if (history_count > 15)
+        %         if (history_bool)
+        %             clearpoints(history_h1);
+        %         else
+        %             clearpoints(history_h2);
+        %         end
+        %         history_bool = ~history_bool;
+        %         history_count = 0;
+        %     end
+        if (i >= pos_start && i<= pos_end)
+            if (i <= pos_mid)
+                addpoints(history_h1, y(i), 1, z(i));
+            else
+%                 clearpoints(history_h1)
+                addpoints(history_h2, y(i), 1, z(i));
+            end
+%             addpoints(history_h1, y(i), t(i), z(i));
+            p.MarkerFaceColor = [0 1 0];
+            p.MarkerEdgeColor = [0 1 0];
+%             history_h1.MaximumNumPoints = 800;
+        else
+%             clearpoints(history_h1)
+%             clearpoints(history_h2)
+            p.MarkerFaceColor = 'red';
+            p.MarkerEdgeColor = 'red';
+%             history_h1.MaximumNumPoints = 1;
+        end
+        
+        p.XData = y(i);
+        p.YData = 0;
+        p.ZData = z(i);
+        
+%         py.XData = width/2; py.YData = t(i); py.ZData = 0;
+        px.XData = y(i); px.YData = 0; px.ZData = 0;
+        pz.XData = -width/2; pz.YData = 0; pz.ZData = z(i);
+        
+        
+%         pause(0.1)
+        drawnow
+        frame = getframe(gcf);
+%         F(i-t_start+1) = frame;
+        writeVideo(v, frame);
+        axis equal
+        % % hold on;
+        % % plot3(y(i), timestamp(i), z(i), '.');
+        
+        % % plot3(y(i),(i-t_start)/10,z(i),'o','MarkerFaceColor','red');
+        % % for j=t_start:i-1
+        % %     plot3(y(j), (j-t_start)/10, z(j), '.', 'Color', [1 1 1]);
+        % % end
+        % xlim([-3 3])
+        % ylim([0 (t_stop-t_start)/10])
+        % zlim([0 2])
+        % axis equal
+        % % hold on
+        % pause(0.1)
+        % % hold off
+    end
+%     v = VideoWriter('output_hor_3d.avi', 'Uncompressed AVI');   
+%     open(v);
+%     writeVideo(v, F)
+    close(v);
+    
+    
+end
 
 
 % h_2d = figure();
